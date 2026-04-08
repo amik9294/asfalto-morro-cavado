@@ -66,6 +66,12 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
 .doc{margin-top:1.5rem;background:#fffde7;border:1px solid #fff176;border-radius:10px;padding:1.1rem 1.25rem}
 .doc b{font-size:0.88rem;color:#f57f17;display:block;margin-bottom:0.5rem}
 .doc ul{font-size:0.83rem;color:#795548;line-height:2;padding-left:1.2rem}
+/* ── paginação ── */
+.pag{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:1rem}
+.pag-btn{min-width:36px;height:36px;padding:0 10px;border-radius:7px;border:1.5px solid #a5d6a7;background:#f1f8e9;color:#2e7d32;font-size:0.85rem;font-weight:700;font-family:'Lato',sans-serif;cursor:pointer;transition:background 0.2s}
+.pag-btn:hover{background:#e8f5e9}
+.pag-btn.ativo{background:#2e7d32;color:#fff;border-color:#2e7d32;cursor:default}
+.pag-btn:disabled{opacity:0.4;cursor:default}
 </style>
 </head>
 <body>
@@ -82,7 +88,7 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
     <div class="sig-count" id="sigCount">...</div>
     <div class="sig-label">pessoas já assinaram esta petição</div>
     <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-    <div class="goal-row"><span>0</span><span>Meta: 100 assinaturas</span><span>100</span></div>
+    <div class="goal-row"><span>0</span><span>Meta: 500 assinaturas</span><span>500</span></div>
     <div class="dest">
       <b>Destinado a</b>
       Prefeitura Municipal de Conceição da Aparecida — Secretaria de Obras e Infraestrutura, MG
@@ -174,36 +180,70 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
 const SUPA_URL = 'https://lzlfrizdpiuuaaylxhvu.supabase.co';
 const SUPA_KEY = 'sb_publishable_CGX66RynK5PvvEYPu0CpsQ_80wlMsNj';
 const db = supabase.createClient(SUPA_URL, SUPA_KEY);
-const GOAL = 100;
+const GOAL = 500;
 
-// Carregar contador e últimas assinaturas ao abrir a página
+// ── paginação ──
+const PAGE_SIZE = 10;
+let currentPage = 0;
+let totalSigs = 0;
+
 async function carregarContador() {
   const { count } = await db
     .from('assinaturas')
     .select('*', { count: 'exact', head: true });
-  const n = count || 0;
-  document.getElementById('sigCount').textContent = n;
-  document.getElementById('progFill').style.width = Math.min((n / GOAL) * 100, 100) + '%';
+  totalSigs = count || 0;
+  document.getElementById('sigCount').textContent = totalSigs;
+  document.getElementById('progFill').style.width = Math.min((totalSigs / GOAL) * 100, 100) + '%';
 }
 
-async function carregarUltimas() {
+async function carregarUltimas(page = 0) {
+  const from = page * PAGE_SIZE;
+  const to   = from + PAGE_SIZE - 1;
+
   const { data } = await db
     .from('assinaturas')
     .select('nome, localidade, created_at')
     .order('created_at', { ascending: false })
-    .limit(10);
-  if (data && data.length) {
-    document.getElementById('sigList').innerHTML =
-      '<div class="sec">Últimas assinaturas</div>' +
-      data.map(s => `
-        <div class="sig-item">
-          <div class="ava">${s.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
-          <div>
-            <div class="sn">${s.nome}</div>
-            <div class="sd">${s.localidade} · ${timeAgo(new Date(s.created_at))}</div>
-          </div>
-        </div>`).join('');
+    .range(from, to);
+
+  const list = document.getElementById('sigList');
+  const totalPages = Math.ceil(totalSigs / PAGE_SIZE);
+
+  list.innerHTML =
+    '<div class="sec">Assinaturas</div>' +
+    (data && data.length
+      ? data.map(s => `
+          <div class="sig-item">
+            <div class="ava">${s.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
+            <div>
+              <div class="sn">${s.nome}</div>
+              <div class="sd">${s.localidade} · ${timeAgo(new Date(s.created_at))}</div>
+            </div>
+          </div>`).join('')
+      : '<div style="color:#aaa;font-size:0.85rem;padding:1rem 0">Nenhuma assinatura ainda.</div>'
+    ) +
+    (totalPages > 1 ? renderPaginacao(page, totalPages) : '');
+
+  currentPage = page;
+
+  // scroll suave até o topo da lista
+  list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderPaginacao(page, totalPages) {
+  const btns = [];
+
+  // anterior
+  btns.push(`<button class="pag-btn" ${page === 0 ? 'disabled' : `onclick="carregarUltimas(${page - 1})"`}>‹</button>`);
+
+  for (let i = 0; i < totalPages; i++) {
+    btns.push(`<button class="pag-btn${i === page ? ' ativo' : ''}" ${i === page ? '' : `onclick="carregarUltimas(${i})"`}>${i + 1}</button>`);
   }
+
+  // próximo
+  btns.push(`<button class="pag-btn" ${page === totalPages - 1 ? 'disabled' : `onclick="carregarUltimas(${page + 1})"`}>›</button>`);
+
+  return `<div class="pag">${btns.join('')}</div>`;
 }
 
 // Formatação automática
@@ -233,7 +273,6 @@ function vCPF(c) {
 document.getElementById('cpf').addEventListener('input', function(){ this.value=fCPF(this.value); checarBtn(); });
 document.getElementById('tel').addEventListener('input', function(){ this.value=fTel(this.value); checarBtn(); });
 
-// Habilita botão só quando todos os campos estão preenchidos
 function checarBtn() {
   const nome   = document.getElementById('nome').value.trim();
   const cpf    = document.getElementById('cpf').value.replace(/\D/g,'');
@@ -279,7 +318,6 @@ async function assinar() {
   if (!cidade) { setErr('Cidade','Informe o município'); ok=false; }
   if (!ok) return;
 
-  // Verificar CPF duplicado
   const { data: existe } = await db
     .from('assinaturas')
     .select('id')
@@ -318,7 +356,7 @@ async function assinar() {
   document.getElementById('cidade').value = 'Conceição da Aparecida - MG';
 
   await carregarContador();
-  await carregarUltimas();
+  await carregarUltimas(0); // reset para página 0 após nova assinatura
 
   setTimeout(() => {
     document.getElementById('okBox').style.display = 'none';
@@ -345,7 +383,7 @@ function copiar() {
 
 // Iniciar
 carregarContador();
-carregarUltimas();
+carregarUltimas(0);
 </script>
 
 </body>
