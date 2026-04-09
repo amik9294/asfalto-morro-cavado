@@ -360,8 +360,13 @@ async function assinar() {
   btn.textContent = 'Assinar a Petição por Morro Cavado';
 
   if (error) {
-    document.getElementById('erroMsg').textContent = 'Erro ao registrar. Verifique sua conexão e tente novamente.';
-    document.getElementById('erroBox').style.display = 'block';
+    // código 23505 = violação de unique constraint (CPF duplicado)
+    if (error.code === '23505') {
+      setErr('Cpf', 'Este CPF já assinou a petição');
+    } else {
+      document.getElementById('erroMsg').textContent = 'Erro ao registrar. Verifique sua conexão e tente novamente.';
+      document.getElementById('erroBox').style.display = 'block';
+    }
     btn.disabled = false;
     btn.classList.add('ativo');
     return;
