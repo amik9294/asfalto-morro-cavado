@@ -1,0 +1,57 @@
+name: Backup Diário - Assinaturas
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # todo dia às 03:00 horário de Brasília (06:00 UTC)
+  workflow_dispatch:       # permite rodar manualmente pelo GitHub
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências
+        run: npm install @supabase/supabase-js
+
+      - name: Exportar assinaturas para CSV
+        run: |
+          node -e "
+          const { createClient } = require('@supabase/supabase-js');
+          const fs = require('fs');
+
+          const db = createClient('${{ secrets.SUPA_URL }}', '${{ secrets.SUPA_KEY }}');
+
+          async function exportar() {
+            const { data, error } = await db
+              .from('assinaturas')
+              .select('id, created_at, nome, cpf, telefone, localidade, municipio, consentimento_cpf, consentimento_at_br, dispositivo, navegador, user_agent')
+              .order('created_at', { ascending: true });
+
+            if (error) { console.error(error); process.exit(1); }
+
+            const cabecalho = 'id,data,nome,cpf,telefone,localidade,municipio,consentimento_cpf,consentimento_at_br,dispositivo,navegador,user_agent';
+            const linhas = data.map(r =>
+              [r.id, r.created_at, r.nome, r.cpf, r.telefone, r.localidade, r.municipio, r.consentimento_cpf, r.consentimento_at_br, r.dispositivo, r.navegador, r.user_agent]
+              .map(v => JSON.stringify(v ?? ''))
+              .join(',')
+            );
+
+            fs.mkdirSync('backups', { recursive: true });
+            const hoje = new Date().toISOString().slice(0, 10);
+            fs.writeFileSync('backups/assinaturas-' + hoje + '.csv', cabecalho + '\n' + linhas.join('\n'));
+            console.log('Backup gerado: ' + data.length + ' assinaturas');
+          }
+
+          exportar();
+          "
+
+      - name: Commit e push do backup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backups/
+          git diff --staged --quiet || git commit -m "backup: assinaturas $(date +'%d/%m/%Y')"
+          git push
