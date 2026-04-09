@@ -26,7 +26,7 @@ jobs:
 
           async function exportar() {
             const { data, error } = await db
-              .from('assinaturas')
+              .from('assinaturas_view')
               .select('id, created_at, nome, cpf, telefone, localidade, municipio, consentimento_cpf, consentimento_at_br, dispositivo, navegador, user_agent')
               .order('created_at', { ascending: true });
 
