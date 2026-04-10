@@ -32,8 +32,11 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
 .stat{background:#fff;border:1px solid #e0dbd0;border-radius:10px;padding:0.85rem;text-align:center}
 .stat-n{font-family:'Merriweather',serif;font-size:1.15rem;font-weight:900;color:#2e7d32;line-height:1.2}
 .stat-d{font-size:11px;color:#888;margin-top:4px;line-height:1.4}
-.video-box{margin-top:1rem;border-radius:10px;overflow:hidden;border:1px solid #e0dbd0;aspect-ratio:16/9}
-.video-box iframe{width:100%;height:100%;border:none;display:block}
+.video-box{margin-top:0.5rem;border-radius:10px;overflow:hidden;border:1px solid #e0dbd0;aspect-ratio:3/4}
+.video-box video{width:100%;height:100%;display:block;object-fit:cover}
+.videos-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:1rem}
+.video-label{font-size:12px;font-weight:700;color:#558b2f;margin-bottom:6px;text-align:center}
+@media(max-width:520px){.videos-grid{grid-template-columns:1fr}}
 .form-hdr{background:#f1f8e9;border:1px solid #c5e1a5;border-radius:8px;padding:0.85rem 1rem;margin-bottom:1.25rem}
 .form-hdr h3{font-family:'Merriweather',serif;font-size:0.95rem;color:#2e7d32}
 .form-hdr p{font-size:12px;color:#558b2f;margin-top:3px}
@@ -108,7 +111,7 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
   <div class="sec">Por que esta petição é necessária?</div>
   <div class="why">
     <img class="why-img"
-         src="2.png" 
+         src="2.webp" 
          alt="Vista aérea de Morro Cavado">
     <p>Nós, moradores de <strong>Morro Cavado</strong> — distrito pertencente a Conceição da Aparecida, MG — e bairros vizinhos, há anos enfrentamos grandes dificuldades devido à falta de pavimentação da estrada que liga a cidade ao distrito.</p>
     <p>A poeira, a lama e os buracos tornam o percurso complicado e, muitas vezes, perigoso, comprometendo o transporte de bens, serviços e pessoas. <strong>Muitos anos de espera</strong> por melhorias que nunca chegam, impedindo o progresso e o desenvolvimento econômico da região.</p>
@@ -123,9 +126,19 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
   </div>
 
   <div class="sec">Veja a realidade da nossa estrada</div>
-  <div class="video-box">
-    <iframe src="1.mp4"
-            allow="autoplay" allowfullscreen></iframe>
+  <div class="videos-grid">
+    <div class="video-item">
+      <div class="video-label">📹 A estrada que precisamos asfaltar</div>
+      <div class="video-box">
+        <video src="1.mp4" controls playsinline></video>
+      </div>
+    </div>
+    <div class="video-item">
+      <div class="video-label">🎙️ Dedé Munhoz apoia o movimento</div>
+      <div class="video-box">
+        <video src="dede.mp4" controls playsinline></video>
+      </div>
+    </div>
   </div>
 
   <div class="sec">Assine a petição</div>
