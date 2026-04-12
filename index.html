@@ -362,6 +362,11 @@ function getDispositivo() {
 }
 
 async function assinar() {
+  // desabilita imediatamente para evitar cliques duplos
+  const btn = document.getElementById('signBtn');
+  btn.disabled = true;
+  btn.classList.remove('ativo');
+
   clrErr();
   const nome   = document.getElementById('nome').value.trim();
   const cpf    = document.getElementById('cpf').value.trim();
@@ -375,7 +380,11 @@ async function assinar() {
   if (tel.replace(/\D/g,'').length < 10) { setErr('Tel','Telefone inválido'); ok=false; }
   if (!end) { setErr('End','Informe sua localidade'); ok=false; }
   if (!cidade) { setErr('Cidade','Informe o município'); ok=false; }
-  if (!ok) return;
+  if (!ok) {
+    btn.disabled = false;
+    btn.classList.add('ativo');
+    return;
+  }
 
   const { data: existe } = await db
     .from('assinaturas')
@@ -384,12 +393,11 @@ async function assinar() {
     .limit(1);
   if (existe && existe.length > 0) {
     setErr('Cpf','Este CPF já assinou a petição');
+    btn.disabled = false;
+    btn.classList.add('ativo');
     return;
   }
 
-  const btn = document.getElementById('signBtn');
-  btn.disabled = true;
-  btn.classList.remove('ativo');
   btn.textContent = 'Registrando...';
 
   const { os, browser } = getDispositivo();
