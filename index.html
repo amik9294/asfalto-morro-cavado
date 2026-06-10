@@ -267,7 +267,7 @@ async function carregarContador() {
   document.getElementById('progFill').style.width = Math.min((totalSigs / GOAL) * 100, 100) + '%';
 }
 
-async function carregarUltimas(page = 0) {
+async function carregarUltimas(page = 0, scroll = false) {
   const from = page * PAGE_SIZE;
   const to   = from + PAGE_SIZE - 1;
 
@@ -297,22 +297,22 @@ async function carregarUltimas(page = 0) {
 
   currentPage = page;
 
-  // scroll suave até o topo da lista
-  list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // scroll suave até o topo da lista (apenas ao navegar pela paginação)
+  if (scroll) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderPaginacao(page, totalPages) {
   const btns = [];
 
   // anterior
-  btns.push(`<button class="pag-btn" ${page === 0 ? 'disabled' : `onclick="carregarUltimas(${page - 1})"`}>‹</button>`);
+  btns.push(`<button class="pag-btn" ${page === 0 ? 'disabled' : `onclick="carregarUltimas(${page - 1}, true)"`}>‹</button>`);
 
   for (let i = 0; i < totalPages; i++) {
-    btns.push(`<button class="pag-btn${i === page ? ' ativo' : ''}" ${i === page ? '' : `onclick="carregarUltimas(${i})"`}>${i + 1}</button>`);
+    btns.push(`<button class="pag-btn${i === page ? ' ativo' : ''}" ${i === page ? '' : `onclick="carregarUltimas(${i}, true)"`}>${i + 1}</button>`);
   }
 
   // próximo
-  btns.push(`<button class="pag-btn" ${page === totalPages - 1 ? 'disabled' : `onclick="carregarUltimas(${page + 1})"`}>›</button>`);
+  btns.push(`<button class="pag-btn" ${page === totalPages - 1 ? 'disabled' : `onclick="carregarUltimas(${page + 1}, true)"`}>›</button>`);
 
   return `<div class="pag">${btns.join('')}</div>`;
 }
