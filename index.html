@@ -85,6 +85,7 @@ body{font-family:'Lato',sans-serif;background:#f7f4ee;color:#2c2c2a}
 .pag-btn:hover{background:#e8f5e9}
 .pag-btn.ativo{background:#2e7d32;color:#fff;border-color:#2e7d32;cursor:default}
 .pag-btn:disabled{opacity:0.4;cursor:default}
+.pag-dots{min-width:24px;height:36px;display:flex;align-items:center;justify-content:center;color:#999;font-weight:700;font-size:0.85rem}
 </style>
 </head>
 <body>
@@ -258,24 +259,20 @@ const PAGE_SIZE = 10;
 let currentPage = 0;
 let totalSigs = 0;
 
-async function carregarContador() {
-  const { count } = await db
-    .from('assinaturas')
-    .select('*', { count: 'exact', head: true });
-  totalSigs = count || 0;
-  document.getElementById('sigCount').textContent = totalSigs;
-  document.getElementById('progFill').style.width = Math.min((totalSigs / GOAL) * 100, 100) + '%';
-}
-
 async function carregarUltimas(page = 0, scroll = false) {
   const from = page * PAGE_SIZE;
   const to   = from + PAGE_SIZE - 1;
 
-  const { data } = await db
+  // count vem junto com os dados — evita corrida entre contador e lista
+  const { data, count } = await db
     .from('assinaturas')
-    .select('nome, localidade, created_at')
+    .select('nome, localidade, created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
+
+  if (count != null) totalSigs = count;
+  document.getElementById('sigCount').textContent = totalSigs;
+  document.getElementById('progFill').style.width = Math.min((totalSigs / GOAL) * 100, 100) + '%';
 
   const list = document.getElementById('sigList');
   const totalPages = Math.ceil(totalSigs / PAGE_SIZE);
@@ -307,8 +304,13 @@ function renderPaginacao(page, totalPages) {
   // anterior
   btns.push(`<button class="pag-btn" ${page === 0 ? 'disabled' : `onclick="carregarUltimas(${page - 1}, true)"`}>‹</button>`);
 
+  // janela compacta: primeira, última e vizinhas da página atual; reticências no meio
+  let anterior = -1;
   for (let i = 0; i < totalPages; i++) {
+    if (i !== 0 && i !== totalPages - 1 && Math.abs(i - page) > 1) continue;
+    if (anterior !== -1 && i - anterior > 1) btns.push('<span class="pag-dots">…</span>');
     btns.push(`<button class="pag-btn${i === page ? ' ativo' : ''}" ${i === page ? '' : `onclick="carregarUltimas(${i}, true)"`}>${i + 1}</button>`);
+    anterior = i;
   }
 
   // próximo
@@ -469,7 +471,6 @@ async function assinar() {
   document.getElementById('cidade').value = 'Conceição da Aparecida - MG';
   document.getElementById('chkConsent').checked = false;
 
-  await carregarContador();
   await carregarUltimas(0); // reset para página 0 após nova assinatura
 
   setTimeout(() => {
@@ -496,7 +497,6 @@ function copiar() {
 }
 
 // Iniciar
-carregarContador();
 carregarUltimas(0);
 </script>
 
